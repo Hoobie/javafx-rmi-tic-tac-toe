@@ -35,7 +35,7 @@
                 <version>2.0</version>
                 <configuration>
 
-                    <mainClass>pl.edu.agh.MainApp</mainClass>
+                    <mainClass>pl.edu.agh.Client</mainClass>
 
                     <!-- only required if signing the jar file -->
                     <keyStoreAlias>example-user</keyStoreAlias>
@@ -50,6 +50,12 @@
 
 
     <dependencies>
+
+        <dependency>
+            <groupId>pl.edu.agh</groupId>
+            <artifactId>tic-tac-toe-interfaces</artifactId>
+            <version>1.0-SNAPSHOT</version>
+        </dependency>
 
         <!-- Apache Commons -->
 

@@ -1,4 +1,4 @@
-package pl.edu.agh;
+package pl.edu.agh.controller;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
