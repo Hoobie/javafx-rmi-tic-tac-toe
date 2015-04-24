@@ -9,6 +9,7 @@ import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
+import javafx.scene.control.CheckBox;
 import javafx.scene.control.TextField;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.GridPane;
@@ -41,6 +42,7 @@ public class Client extends Application implements Listener {
     private Scene scene;
 
     private String nick;
+    private boolean singlePlayer = false;
     private TicTacToe ticTacToe = null;
     private PlayerSign mySign;
     private boolean myTurn;
@@ -82,6 +84,7 @@ public class Client extends Application implements Listener {
             public void handle(WindowEvent we) {
                 try {
                     ticTacToe.quit(nick, false);
+                    Platform.exit();
                 } catch (RemoteException e) {
                     log.error(e.getMessage());
                 }
@@ -102,12 +105,16 @@ public class Client extends Application implements Listener {
         final TextField textField = new TextField("Nick");
         dialogVBox.getChildren().add(textField);
 
+        final CheckBox checkBox = new CheckBox("Single player");
+        dialogVBox.getChildren().add(checkBox);
+
         Button button = new Button("OK");
         button.setOnMouseClicked(new EventHandler<MouseEvent>() {
             public void handle(MouseEvent event) {
                 String text = textField.getText();
                 if (StringUtils.isNotBlank(text)) {
                     nick = textField.getText();
+                    singlePlayer = checkBox.isSelected();
                     initClient();
                     dialog.close();
                 }
@@ -115,7 +122,7 @@ public class Client extends Application implements Listener {
         });
         dialogVBox.getChildren().add(button);
 
-        Scene dialogScene = new Scene(dialogVBox, 220, 80);
+        Scene dialogScene = new Scene(dialogVBox, 240, 120);
         dialog.setScene(dialogScene);
         dialog.show();
     }
@@ -131,7 +138,7 @@ public class Client extends Application implements Listener {
             Naming.rebind("rmi://" + rmiRegistryIp + ":" + rmiRegistryPort + "/" + nick, listener);
 
             ticTacToe = (TicTacToe) Naming.lookup("rmi://" + rmiRegistryIp + ":" + rmiRegistryPort + "/tic-tac-toe");
-            mySign = ticTacToe.join(nick, false);
+            mySign = ticTacToe.join(nick, singlePlayer);
         } catch (Exception e) {
             log.error(e.getMessage());
         }
@@ -143,13 +150,13 @@ public class Client extends Application implements Listener {
         if (myTurn) {
             int row = GridPane.getRowIndex(button);
             int col = GridPane.getColumnIndex(button);
+            button.setText(mySign.getSign());
             try {
                 ticTacToe.makeTurn(nick, row, col);
                 myTurn = false;
-            } catch (RemoteException e) {
+            } catch (Exception e) {
                 log.error(e.getMessage());
             }
-            button.setText(mySign.getSign());
         }
     }
 

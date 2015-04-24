@@ -1,5 +1,6 @@
 package pl.edu.agh.util;
 
+import javafx.application.Platform;
 import javafx.event.EventHandler;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;

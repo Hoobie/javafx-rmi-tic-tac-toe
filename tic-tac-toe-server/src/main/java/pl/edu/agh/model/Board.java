@@ -7,6 +7,10 @@ public class Board {
 
     private PlayerSign[][] board = new PlayerSign[BOARD_SIZE][BOARD_SIZE];
 
+    public PlayerSign[][] getBoard() {
+        return board;
+    }
+
     public void makeTurn(PlayerSign sign, int row, int col) {
         board[row][col] = sign;
     }

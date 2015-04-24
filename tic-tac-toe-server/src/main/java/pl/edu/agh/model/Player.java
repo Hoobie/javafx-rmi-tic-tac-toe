@@ -19,6 +19,9 @@ public class Player {
         this.nick = nick;
         this.sign = sign;
         hasTurn = sign.equals(PlayerSign.X);
+        if (nick.equals("bot")) {
+            return;
+        }
         try {
             listener = (Listener) Naming.lookup("rmi://" + rmiRegistryIp + ":" + rmiRegistryPort + "/" + nick);
         } catch (Exception e) {
