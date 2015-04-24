@@ -9,4 +9,6 @@ public interface Listener extends Remote {
     void onWin() throws RemoteException;
 
     void onLoss() throws RemoteException;
+
+    void onDraw() throws RemoteException;
 }

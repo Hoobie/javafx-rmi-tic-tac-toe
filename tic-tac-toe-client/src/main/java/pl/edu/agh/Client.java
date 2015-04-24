@@ -1,52 +1,62 @@
 package pl.edu.agh;
 
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.event.EventHandler;
 import javafx.fxml.FXMLLoader;
+import javafx.geometry.Pos;
+import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
+import javafx.scene.control.TextField;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.GridPane;
+import javafx.scene.layout.VBox;
+import javafx.stage.Modality;
 import javafx.stage.Stage;
+import javafx.stage.WindowEvent;
+import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import pl.edu.agh.util.ClientUtil;
 
+import java.io.InputStream;
 import java.rmi.Naming;
 import java.rmi.RemoteException;
+import java.rmi.server.UnicastRemoteObject;
+import java.util.Properties;
 
 import static pl.edu.agh.util.ClientUtil.isMyTurn;
+import static pl.edu.agh.util.SceneUtil.makeEndDialog;
 
-public class Client extends Application {
+public class Client extends Application implements Listener {
     private static final Logger log = LoggerFactory.getLogger(Client.class);
 
+    private static final String PROPERTIES_FILE_NAME = "client.properties";
     private static final int BOARD_SIZE = 3;
 
-    private static TicTacToe ticTacToe = null;
-    private static String nick;
-    private static PlayerSign mySign;
-    private static boolean myTurn;
+    private static Properties properties = new Properties();
+
+    private Scene scene;
+
+    private String nick;
+    private TicTacToe ticTacToe = null;
+    private PlayerSign mySign;
+    private boolean myTurn;
 
     public static void main(String[] args) throws Exception {
-        ticTacToe = (TicTacToe) Naming.lookup("rmi://127.0.0.1:1099/tic-tac-toe");
-        nick = args[0];
-        mySign = ticTacToe.join(nick, false);
-        myTurn = isMyTurn(mySign);
         launch(args);
     }
 
     @Override
     public void start(Stage stage) throws Exception {
-
-        log.info("Starting application...");
-
-        String fxmlFile = "/fxml/hello.fxml";
+        String fxmlFile = "/fxml/client.fxml";
         log.debug("Loading FXML for main view from: {}", fxmlFile);
         FXMLLoader loader = new FXMLLoader();
         Parent rootNode = loader.load(getClass().getResourceAsStream(fxmlFile));
 
-        log.debug("Showing JFX scene");
-        Scene scene = new Scene(rootNode);
+        scene = new Scene(rootNode);
         scene.getStylesheets().add("/styles/styles.css");
 
         final GridPane gridPane = (GridPane) scene.lookup("#gridPane");
@@ -67,6 +77,66 @@ public class Client extends Application {
         stage.setTitle("Tic-Tac-Toe");
         stage.setScene(scene);
         stage.show();
+
+        stage.setOnCloseRequest(new EventHandler<WindowEvent>() {
+            public void handle(WindowEvent we) {
+                try {
+                    ticTacToe.quit(nick, false);
+                } catch (RemoteException e) {
+                    log.error(e.getMessage());
+                }
+            }
+        });
+
+        makeNickDialog(stage);
+    }
+
+    private void makeNickDialog(Stage primaryStage) {
+        final Stage dialog = new Stage();
+        dialog.initModality(Modality.APPLICATION_MODAL);
+        dialog.initOwner(primaryStage);
+
+        VBox dialogVBox = new VBox(20);
+        dialogVBox.setAlignment(Pos.CENTER);
+
+        final TextField textField = new TextField("Nick");
+        dialogVBox.getChildren().add(textField);
+
+        Button button = new Button("OK");
+        button.setOnMouseClicked(new EventHandler<MouseEvent>() {
+            public void handle(MouseEvent event) {
+                String text = textField.getText();
+                if (StringUtils.isNotBlank(text)) {
+                    nick = textField.getText();
+                    initClient();
+                    dialog.close();
+                }
+            }
+        });
+        dialogVBox.getChildren().add(button);
+
+        Scene dialogScene = new Scene(dialogVBox, 220, 80);
+        dialog.setScene(dialogScene);
+        dialog.show();
+    }
+
+    private void initClient() {
+        InputStream input = getClass().getClassLoader().getResourceAsStream(PROPERTIES_FILE_NAME);
+        try {
+            properties.load(input);
+            String rmiRegistryIp = properties.getProperty("rmiRegistryIp");
+            String rmiRegistryPort = properties.getProperty("rmiRegistryPort");
+
+            Listener listener = (Listener) UnicastRemoteObject.exportObject(this, 0);
+            Naming.rebind("rmi://" + rmiRegistryIp + ":" + rmiRegistryPort + "/" + nick, listener);
+
+            ticTacToe = (TicTacToe) Naming.lookup("rmi://" + rmiRegistryIp + ":" + rmiRegistryPort + "/tic-tac-toe");
+            mySign = ticTacToe.join(nick, false);
+        } catch (Exception e) {
+            log.error(e.getMessage());
+        }
+        log.info("Player: " + nick + " joined the server with the sign: " + mySign.getSign());
+        myTurn = isMyTurn(mySign);
     }
 
     private void onButtonClick(Button button) {
@@ -75,10 +145,63 @@ public class Client extends Application {
             int col = GridPane.getColumnIndex(button);
             try {
                 ticTacToe.makeTurn(nick, row, col);
+                myTurn = false;
             } catch (RemoteException e) {
                 log.error(e.getMessage());
             }
             button.setText(mySign.getSign());
         }
+    }
+
+    public void onOpponentsTurnEnd(int row, int col) throws RemoteException {
+        // inverted axises
+        final Button button = (Button) getNodeFromGridPane(col, row);
+        if (button != null) {
+            Platform.runLater(new Runnable() {
+                public void run() {
+                    button.setText(ClientUtil.getOppositeSign(mySign).getSign());
+                }
+            });
+            myTurn = true;
+        } else {
+            log.error("No such node.");
+        }
+    }
+
+    private Node getNodeFromGridPane(int col, int row) {
+        GridPane gridPane = (GridPane) scene.lookup("#gridPane");
+        for (Node node : gridPane.getChildren()) {
+            if (GridPane.getColumnIndex(node) == col && GridPane.getRowIndex(node) == row) {
+                return node;
+            }
+        }
+        return null;
+    }
+
+    public void onWin() throws RemoteException {
+        myTurn = false;
+        Platform.runLater(new Runnable() {
+            public void run() {
+                makeEndDialog(scene.getWindow(), ticTacToe, nick, "You've won!");
+            }
+        });
+    }
+
+    public void onLoss() throws RemoteException {
+        myTurn = false;
+        Platform.runLater(new Runnable() {
+            public void run() {
+                makeEndDialog(scene.getWindow(), ticTacToe, nick, "You've lose.");
+            }
+        });
+    }
+
+    public void onDraw() throws RemoteException {
+        myTurn = false;
+        Platform.runLater(new Runnable() {
+            public void run() {
+                makeEndDialog(scene.getWindow(), ticTacToe, nick, "Draw.");
+            }
+        });
     }
 }
