@@ -2,7 +2,6 @@ package pl.edu.agh;
 
 import javafx.application.Application;
 import javafx.application.Platform;
-import javafx.event.EventHandler;
 import javafx.fxml.FXMLLoader;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
@@ -11,12 +10,10 @@ import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.TextField;
-import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
-import javafx.stage.WindowEvent;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -67,11 +64,7 @@ public class Client extends Application implements Listener {
                 final Button button = new Button();
                 button.setMaxWidth(Double.MAX_VALUE);
                 button.setMaxHeight(Double.MAX_VALUE);
-                button.setOnMouseClicked(new EventHandler<MouseEvent>() {
-                    public void handle(MouseEvent event) {
-                        onButtonClick(button);
-                    }
-                });
+                button.setOnMouseClicked(event -> onButtonClick(button));
                 gridPane.add(button, i, j);
             }
         }
@@ -80,14 +73,12 @@ public class Client extends Application implements Listener {
         stage.setScene(scene);
         stage.show();
 
-        stage.setOnCloseRequest(new EventHandler<WindowEvent>() {
-            public void handle(WindowEvent we) {
-                try {
-                    ticTacToe.quit(nick, false);
-                    Platform.exit();
-                } catch (RemoteException e) {
-                    log.error(e.getMessage());
-                }
+        stage.setOnCloseRequest(we -> {
+            try {
+                ticTacToe.quit(nick, false);
+                Platform.exit();
+            } catch (RemoteException e) {
+                log.error(e.getMessage());
             }
         });
 
@@ -109,15 +100,13 @@ public class Client extends Application implements Listener {
         dialogVBox.getChildren().add(checkBox);
 
         Button button = new Button("OK");
-        button.setOnMouseClicked(new EventHandler<MouseEvent>() {
-            public void handle(MouseEvent event) {
-                String text = textField.getText();
-                if (StringUtils.isNotBlank(text)) {
-                    nick = textField.getText();
-                    singlePlayer = checkBox.isSelected();
-                    initClient();
-                    dialog.close();
-                }
+        button.setOnMouseClicked(event -> {
+            String text = textField.getText();
+            if (StringUtils.isNotBlank(text)) {
+                nick = textField.getText();
+                singlePlayer = checkBox.isSelected();
+                initClient();
+                dialog.close();
             }
         });
         dialogVBox.getChildren().add(button);
@@ -138,6 +127,7 @@ public class Client extends Application implements Listener {
             Naming.rebind("rmi://" + rmiRegistryIp + ":" + rmiRegistryPort + "/" + nick, listener);
 
             ticTacToe = (TicTacToe) Naming.lookup("rmi://" + rmiRegistryIp + ":" + rmiRegistryPort + "/tic-tac-toe");
+
             mySign = ticTacToe.join(nick, singlePlayer);
         } catch (Exception e) {
             log.error(e.getMessage());
@@ -152,24 +142,25 @@ public class Client extends Application implements Listener {
             int col = GridPane.getColumnIndex(button);
             button.setText(mySign.getSign());
             try {
-                ticTacToe.makeTurn(nick, row, col);
                 myTurn = false;
+                ticTacToe.endTurn(nick, row, col);
             } catch (Exception e) {
                 log.error(e.getMessage());
             }
         }
     }
 
+    @Override
+    public void onMyTurn() throws RemoteException {
+        myTurn = true;
+    }
+
+    @Override
     public void onOpponentsTurnEnd(int row, int col) throws RemoteException {
         // inverted axises
         final Button button = (Button) getNodeFromGridPane(col, row);
         if (button != null) {
-            Platform.runLater(new Runnable() {
-                public void run() {
-                    button.setText(ClientUtil.getOppositeSign(mySign).getSign());
-                }
-            });
-            myTurn = true;
+            Platform.runLater(() -> button.setText(ClientUtil.getOppositeSign(mySign).getSign()));
         } else {
             log.error("No such node.");
         }
@@ -185,30 +176,21 @@ public class Client extends Application implements Listener {
         return null;
     }
 
+    @Override
     public void onWin() throws RemoteException {
         myTurn = false;
-        Platform.runLater(new Runnable() {
-            public void run() {
-                makeEndDialog(scene.getWindow(), ticTacToe, nick, "You've won!");
-            }
-        });
+        Platform.runLater(() -> makeEndDialog(scene.getWindow(), ticTacToe, nick, "You've won!"));
     }
 
+    @Override
     public void onLoss() throws RemoteException {
         myTurn = false;
-        Platform.runLater(new Runnable() {
-            public void run() {
-                makeEndDialog(scene.getWindow(), ticTacToe, nick, "You've lose.");
-            }
-        });
+        Platform.runLater(() -> makeEndDialog(scene.getWindow(), ticTacToe, nick, "You've lose."));
     }
 
+    @Override
     public void onDraw() throws RemoteException {
         myTurn = false;
-        Platform.runLater(new Runnable() {
-            public void run() {
-                makeEndDialog(scene.getWindow(), ticTacToe, nick, "Draw.");
-            }
-        });
+        Platform.runLater(() -> makeEndDialog(scene.getWindow(), ticTacToe, nick, "Draw."));
     }
 }

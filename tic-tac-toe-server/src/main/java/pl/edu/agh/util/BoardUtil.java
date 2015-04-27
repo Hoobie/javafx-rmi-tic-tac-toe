@@ -1,33 +1,24 @@
-package pl.edu.agh.model;
+package pl.edu.agh.util;
 
 import pl.edu.agh.PlayerSign;
 
-public class Board {
+public class BoardUtil {
+
     private static final int BOARD_SIZE = 3;
 
-    private PlayerSign[][] board = new PlayerSign[BOARD_SIZE][BOARD_SIZE];
-
-    public PlayerSign[][] getBoard() {
-        return board;
-    }
-
-    public void makeTurn(PlayerSign sign, int row, int col) {
-        board[row][col] = sign;
-    }
-
-    public PlayerSign checkWin() {
-        PlayerSign rowsAndColumns = checkRowsAndColumns();
+    public static PlayerSign checkWin(PlayerSign[][] board) {
+        PlayerSign rowsAndColumns = checkRowsAndColumns(board);
         if (rowsAndColumns == null) {
-            PlayerSign cross1 = checkCross1();
+            PlayerSign cross1 = checkCross1(board);
             if (cross1 == null) {
-                return checkCross2();
+                return checkCross2(board);
             }
             return cross1;
         }
         return rowsAndColumns;
     }
 
-    private PlayerSign checkRowsAndColumns() {
+    private static PlayerSign checkRowsAndColumns(PlayerSign[][] board) {
         int firstRowCounter = 0;
         boolean firstRowStreak = false;
         int firstColumnCounter = 0;
@@ -110,7 +101,7 @@ public class Board {
         return null;
     }
 
-    private PlayerSign checkCross1() {
+    private static PlayerSign checkCross1(PlayerSign[][] board) {
         boolean firstStreak = false;
         boolean secondStreak = false;
         int firstCounter = 0;
@@ -146,7 +137,7 @@ public class Board {
         return null;
     }
 
-    private PlayerSign checkCross2() {
+    private static PlayerSign checkCross2(PlayerSign[][] board) {
         boolean firstStreak = false;
         boolean secondStreak = false;
         int firstCounter = 0;
@@ -182,7 +173,7 @@ public class Board {
         return null;
     }
 
-    public boolean checkDraw() {
+    public static boolean checkDraw(PlayerSign[][] board) {
         int counter = 0;
         for (int i = 0; i < BOARD_SIZE; i++) {
             for (int j = 0; j < BOARD_SIZE; j++) {

@@ -1,11 +1,8 @@
 package pl.edu.agh.util;
 
-import javafx.application.Platform;
-import javafx.event.EventHandler;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
-import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
 import javafx.stage.Modality;
@@ -29,15 +26,13 @@ public class SceneUtil {
         dialogVBox.getChildren().add(text);
 
         Button button = new Button("OK");
-        button.setOnMouseClicked(new EventHandler<MouseEvent>() {
-            public void handle(MouseEvent event) {
-                dialog.close();
-                ((Stage) window).close();
-                try {
-                    ticTacToe.quit(nick, true);
-                } catch (RemoteException e) {
-                    e.printStackTrace();
-                }
+        button.setOnMouseClicked(event -> {
+            dialog.close();
+            ((Stage) window).close();
+            try {
+                ticTacToe.quit(nick, true);
+            } catch (RemoteException e) {
+                e.printStackTrace();
             }
         });
         dialogVBox.getChildren().add(button);
