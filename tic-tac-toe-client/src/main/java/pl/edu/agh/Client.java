@@ -25,7 +25,6 @@ import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.Properties;
 
-import static pl.edu.agh.util.ClientUtil.isMyTurn;
 import static pl.edu.agh.util.SceneUtil.makeEndDialog;
 
 public class Client extends Application implements Listener {
