@@ -13,12 +13,10 @@ public class Player {
     public String nick;
     public Listener listener;
     public PlayerSign sign;
-    public boolean hasTurn;
 
     public Player(String nick, PlayerSign sign, String rmiRegistryIp, String rmiRegistryPort) {
         this.nick = nick;
         this.sign = sign;
-        hasTurn = sign.equals(PlayerSign.X);
         try {
             listener = (Listener) Naming.lookup("rmi://" + rmiRegistryIp + ":" + rmiRegistryPort + "/" + nick);
         } catch (Exception e) {

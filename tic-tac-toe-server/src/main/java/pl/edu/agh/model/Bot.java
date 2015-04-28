@@ -4,7 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import pl.edu.agh.Listener;
 import pl.edu.agh.PlayerSign;
-import pl.edu.agh.TicTacToe;
+import pl.edu.agh.Turn;
 
 import java.rmi.Naming;
 import java.rmi.RemoteException;
@@ -19,7 +19,7 @@ public class Bot implements Listener {
     private final Random random = new Random();
     private final PlayerSign[][] board;
 
-    private TicTacToe ticTacToe;
+    private Turn lastTurn;
 
     public Bot(PlayerSign[][] board, String rmiRegistryIp, String rmiRegistryPort) {
         this.board = board;
@@ -27,7 +27,6 @@ public class Bot implements Listener {
         try {
             listener = (Listener) UnicastRemoteObject.exportObject(this, 0);
             Naming.rebind("rmi://" + rmiRegistryIp + ":" + rmiRegistryPort + "/bot", listener);
-            ticTacToe = (TicTacToe) Naming.lookup("rmi://" + rmiRegistryIp + ":" + rmiRegistryPort + "/tic-tac-toe");
         } catch (Exception e) {
             log.info(e.getMessage());
         }
@@ -42,7 +41,17 @@ public class Bot implements Listener {
             potentialRow = random.nextInt(BOARD_SIZE);
             potentialCol = random.nextInt(BOARD_SIZE);
         } while (board[potentialRow][potentialCol] != null);
-        ticTacToe.endTurn("bot", potentialRow, potentialCol);
+        lastTurn = new Turn(potentialRow, potentialCol);
+    }
+
+    @Override
+    public Turn getMyTurn() throws RemoteException {
+        if (lastTurn != null) {
+            Turn turn = lastTurn;
+            lastTurn = null;
+            return turn;
+        }
+        return null;
     }
 
     @Override

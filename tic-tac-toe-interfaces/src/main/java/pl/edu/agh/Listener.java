@@ -6,6 +6,8 @@ import java.rmi.RemoteException;
 public interface Listener extends Remote {
     void onMyTurn() throws RemoteException;
 
+    Turn getMyTurn() throws RemoteException;
+
     void onOpponentsTurnEnd(int row, int col) throws RemoteException;
 
     void onWin() throws RemoteException;

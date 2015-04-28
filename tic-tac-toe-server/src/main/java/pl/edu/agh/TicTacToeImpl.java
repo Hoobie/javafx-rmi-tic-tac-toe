@@ -38,19 +38,22 @@ public class TicTacToeImpl implements TicTacToe {
 
     private void gameLoop() throws Exception {
         while (true) {
-            Thread.sleep(2000);
+            Thread.sleep(100);
             if (firstPlayer != null && secondPlayer != null) {
-
                 firstPlayer.listener.onMyTurn();
                 while (true) {
-                    if (!firstPlayer.hasTurn) {
+                    Turn turn = firstPlayer.listener.getMyTurn();
+                    if (turn != null) {
+                        endTurn(firstPlayer.nick, turn.row, turn.col);
                         break;
                     }
                 }
 
                 secondPlayer.listener.onMyTurn();
                 while (true) {
-                    if (!secondPlayer.hasTurn) {
+                    Turn turn = secondPlayer.listener.getMyTurn();
+                    if (turn != null) {
+                        endTurn(secondPlayer.nick, turn.row, turn.col);
                         break;
                     }
                 }
@@ -94,8 +97,6 @@ public class TicTacToeImpl implements TicTacToe {
         checkForGameEvents();
 
         oppositePlayer.listener.onOpponentsTurnEnd(row, col);
-        oppositePlayer.hasTurn = true;
-        player.hasTurn = false;
 
         log.info("Player: " + nick + " has made a turn.");
     }

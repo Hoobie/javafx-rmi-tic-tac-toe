@@ -43,6 +43,7 @@ public class Client extends Application implements Listener {
     private TicTacToe ticTacToe = null;
     private PlayerSign mySign;
     private boolean myTurn;
+    private Turn lastTurn;
 
     public static void main(String[] args) throws Exception {
         launch(args);
@@ -133,7 +134,6 @@ public class Client extends Application implements Listener {
             log.error(e.getMessage());
         }
         log.info("Player: " + nick + " joined the server with the sign: " + mySign.getSign());
-        myTurn = isMyTurn(mySign);
     }
 
     private void onButtonClick(Button button) {
@@ -143,7 +143,7 @@ public class Client extends Application implements Listener {
             button.setText(mySign.getSign());
             try {
                 myTurn = false;
-                ticTacToe.endTurn(nick, row, col);
+                lastTurn = new Turn(row, col);
             } catch (Exception e) {
                 log.error(e.getMessage());
             }
@@ -152,7 +152,14 @@ public class Client extends Application implements Listener {
 
     @Override
     public void onMyTurn() throws RemoteException {
+        log.debug("Player's turn.");
+        lastTurn = null;
         myTurn = true;
+    }
+
+    @Override
+    public Turn getMyTurn() throws RemoteException {
+        return lastTurn;
     }
 
     @Override
@@ -185,7 +192,7 @@ public class Client extends Application implements Listener {
     @Override
     public void onLoss() throws RemoteException {
         myTurn = false;
-        Platform.runLater(() -> makeEndDialog(scene.getWindow(), ticTacToe, nick, "You've lose."));
+        Platform.runLater(() -> makeEndDialog(scene.getWindow(), ticTacToe, nick, "You've loose."));
     }
 
     @Override
